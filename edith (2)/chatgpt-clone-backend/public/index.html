@@ -1,0 +1,775 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Edith</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,500;0,600;1,500&display=swap" rel="stylesheet">
+<style>
+  html, body { height: 100%; margin: 0; }
+  ::-webkit-scrollbar { width: 8px; }
+  ::-webkit-scrollbar-thumb { background: #262c42; border-radius: 4px; }
+  ::-webkit-scrollbar-track { background: transparent; }
+  .msg-enter { animation: fadeIn 0.25s ease-out; }
+  @keyframes fadeIn { from { opacity: 0; transform: translateY(4px); } to { opacity: 1; transform: translateY(0); } }
+  .typing-dot { animation: blink 1.4s infinite both; }
+  .typing-dot:nth-child(2) { animation-delay: 0.2s; }
+  .typing-dot:nth-child(3) { animation-delay: 0.4s; }
+  @keyframes blink { 0%, 80%, 100% { opacity: 0.25; } 40% { opacity: 1; } }
+
+  /* ---------- Stylish "Edith" wordmark ---------- */
+  .edith-title {
+    font-family: 'Cormorant Garamond', serif;
+    font-style: italic;
+    font-weight: 600;
+    letter-spacing: 0.03em;
+    background: linear-gradient(135deg, #f0cd85 0%, #d4a24e 45%, #a97a2f 100%);
+    -webkit-background-clip: text;
+    background-clip: text;
+    color: transparent;
+  }
+
+  /* ---------- Decorative background (auth screen) ---------- */
+  .auth-bg {
+    position: relative;
+    background-color: #12162280;
+    background-image:
+      radial-gradient(circle at 15% 20%, rgba(212, 162, 78, 0.16) 0%, transparent 45%),
+      radial-gradient(circle at 85% 80%, rgba(44, 62, 92, 0.55) 0%, transparent 50%),
+      linear-gradient(160deg, #161b2b 0%, #10131f 60%, #14182a 100%);
+    overflow: hidden;
+  }
+  .auth-bg::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background-image:
+      linear-gradient(rgba(212, 162, 78, 0.05) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(212, 162, 78, 0.05) 1px, transparent 1px);
+    background-size: 42px 42px;
+    mask-image: radial-gradient(circle at 50% 40%, black 0%, transparent 75%);
+    pointer-events: none;
+  }
+  .auth-card {
+    position: relative;
+    z-index: 1;
+  }
+
+  /* ---------- Password field with show/hide toggle ---------- */
+  .password-field { position: relative; }
+  .password-field input {
+    padding-right: 2.5rem;
+  }
+  .password-toggle {
+    position: absolute;
+    right: 0.5rem;
+    top: 50%;
+    transform: translateY(-50%);
+    color: #9ca3af;
+    padding: 0.25rem;
+    cursor: pointer;
+    background: none;
+    border: none;
+  }
+  .password-toggle:hover { color: #e5e7eb; }
+  .password-toggle .icon-hide { display: none; }
+  .password-toggle.showing .icon-eye { display: none; }
+  .password-toggle.showing .icon-hide { display: block; }
+
+  /* ---------- Chat area wallpaper (subtle "E" monogram, WhatsApp-style tiling) ---------- */
+  .chat-wallpaper {
+    background-color: #1e2436;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='120' height='120' viewBox='0 0 120 120'%3E%3Ctext x='14' y='42' font-family='Georgia, serif' font-style='italic' font-size='30' fill='%23d4a24e' opacity='0.055'%3EE%3C/text%3E%3Ctext x='74' y='102' font-family='Georgia, serif' font-style='italic' font-size='30' fill='%23d4a24e' opacity='0.055'%3EE%3C/text%3E%3C/svg%3E");
+    background-repeat: repeat;
+  }
+  body.light-mode .chat-wallpaper {
+    background-color: #ffffff;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='120' height='120' viewBox='0 0 120 120'%3E%3Ctext x='14' y='42' font-family='Georgia, serif' font-style='italic' font-size='30' fill='%23b8863c' opacity='0.07'%3EE%3C/text%3E%3Ctext x='74' y='102' font-family='Georgia, serif' font-style='italic' font-size='30' fill='%23b8863c' opacity='0.07'%3EE%3C/text%3E%3C/svg%3E");
+  }
+
+  /* ---------- Light mode overrides ---------- */
+  body.light-mode { background-color: #ffffff !important; color: #111827 !important; }
+  body.light-mode ::-webkit-scrollbar-thumb { background: #d1d5db; }
+  body.light-mode #sidebar { background-color: #f7f7f8 !important; border-color: #e5e7eb !important; }
+  body.light-mode main, body.light-mode #chatArea { background-color: #ffffff !important; }
+  body.light-mode .bg-\[\#1e2436\] { background-color: #ffffff !important; }
+  body.light-mode .bg-\[\#2a3149\] { background-color: #f0f0f2 !important; }
+  body.light-mode .bg-\[\#262c42\] { background-color: #f7f7f8 !important; }
+  body.light-mode .bg-\[\#262c42\] { background-color: #f0f0f2 !important; }
+  body.light-mode .bg-\[\#161b2b\] { background-color: #f7f7f8 !important; }
+  body.light-mode .hover\:bg-\[\#333a54\]:hover { background-color: #e5e7eb !important; }
+  body.light-mode .border-gray-700 { border-color: #e5e7eb !important; }
+  body.light-mode .border-gray-600 { border-color: #d1d5db !important; }
+  body.light-mode .text-gray-100 { color: #111827 !important; }
+  body.light-mode .text-gray-200 { color: #1f2937 !important; }
+  body.light-mode .text-gray-300 { color: #374151 !important; }
+  body.light-mode .text-gray-400 { color: #6b7280 !important; }
+  body.light-mode .text-gray-500 { color: #6b7280 !important; }
+  body.light-mode .hover\:bg-gray-700\/40:hover { background-color: #e5e7eb !important; }
+  body.light-mode .hover\:bg-gray-600\/50:hover { background-color: #e5e7eb !important; }
+  body.light-mode .placeholder-gray-400::placeholder { color: #9ca3af !important; }
+  body.light-mode .typing-dot { background-color: #9ca3af !important; }
+</style>
+</head>
+<body class="bg-[#1e2436] text-gray-100 font-sans">
+
+<!-- ============ AUTH SCREEN ============ -->
+<div id="authScreen" class="auth-bg fixed inset-0 flex items-center justify-center z-50 px-4">
+  <div class="w-full max-w-sm auth-card">
+    <h1 class="edith-title text-5xl text-center mb-1">Edith</h1>
+    <p class="text-gray-400 text-center mb-8" id="authSubtitle">Log in to continue</p>
+
+    <div id="authError" class="hidden bg-red-500/10 border border-red-500/40 text-red-400 text-sm rounded-md px-3 py-2 mb-4"></div>
+
+    <!-- Login form -->
+    <form id="loginForm" class="space-y-3">
+      <input id="loginEmail" type="email" required placeholder="Email"
+        class="w-full bg-[#232a40] border border-gray-600 rounded-md px-3 py-2.5 text-sm outline-none focus:border-gray-400" />
+      <div class="password-field">
+        <input id="loginPassword" type="password" required placeholder="Password"
+          class="w-full bg-[#232a40] border border-gray-600 rounded-md px-3 py-2.5 text-sm outline-none focus:border-gray-400" />
+        <button type="button" class="password-toggle" data-target="loginPassword" title="Show/Hide password">
+          <svg xmlns="http://www.w3.org/2000/svg" class="icon-eye w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+            <path stroke-linecap="round" stroke-linejoin="round" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+          </svg>
+          <svg xmlns="http://www.w3.org/2000/svg" class="icon-hide w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M13.875 18.825A10.05 10.05 0 0112 19c-4.478 0-8.268-2.943-9.542-7a10.025 10.025 0 012.132-3.575m3.087-2.153A9.958 9.958 0 0112 5c4.478 0 8.268 2.943 9.542 7a9.964 9.964 0 01-4.132 5.411M14.121 14.121A3 3 0 019.88 9.88M14.121 14.121L9.879 9.879M14.121 14.121L18 18M9.879 9.879L6 6" />
+          </svg>
+        </button>
+      </div>
+      <button type="submit" class="w-full bg-[#d4a24e] hover:bg-[#b8863c] transition-colors rounded-md px-3 py-2.5 text-sm font-medium">Log In</button>
+    </form>
+
+    <!-- Signup form -->
+    <form id="signupForm" class="space-y-3 hidden">
+      <input id="signupName" type="text" required placeholder="Full name"
+        class="w-full bg-[#232a40] border border-gray-600 rounded-md px-3 py-2.5 text-sm outline-none focus:border-gray-400" />
+      <input id="signupEmail" type="email" required placeholder="Email"
+        class="w-full bg-[#232a40] border border-gray-600 rounded-md px-3 py-2.5 text-sm outline-none focus:border-gray-400" />
+      <div class="password-field">
+        <input id="signupPassword" type="password" required placeholder="Password (min 6 characters)"
+          class="w-full bg-[#232a40] border border-gray-600 rounded-md px-3 py-2.5 text-sm outline-none focus:border-gray-400" />
+        <button type="button" class="password-toggle" data-target="signupPassword" title="Show/Hide password">
+          <svg xmlns="http://www.w3.org/2000/svg" class="icon-eye w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+            <path stroke-linecap="round" stroke-linejoin="round" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+          </svg>
+          <svg xmlns="http://www.w3.org/2000/svg" class="icon-hide w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M13.875 18.825A10.05 10.05 0 0112 19c-4.478 0-8.268-2.943-9.542-7a10.025 10.025 0 012.132-3.575m3.087-2.153A9.958 9.958 0 0112 5c4.478 0 8.268 2.943 9.542 7a9.964 9.964 0 01-4.132 5.411M14.121 14.121A3 3 0 019.88 9.88M14.121 14.121L9.879 9.879M14.121 14.121L18 18M9.879 9.879L6 6" />
+          </svg>
+        </button>
+      </div>
+      <button type="submit" class="w-full bg-[#d4a24e] hover:bg-[#b8863c] transition-colors rounded-md px-3 py-2.5 text-sm font-medium">Sign Up</button>
+    </form>
+
+    <p class="text-center text-sm text-gray-400 mt-5">
+      <span id="authToggleText">Don't have an account?</span>
+      <button id="authToggleBtn" class="text-[#d4a24e] hover:underline font-medium">Sign up</button>
+    </p>
+  </div>
+</div>
+
+
+<!-- ============ MAIN APP (hidden until logged in) ============ -->
+<div id="appRoot" class="hidden flex h-screen overflow-hidden">
+
+  <!-- Sidebar -->
+  <aside id="sidebar" class="w-[260px] bg-[#161b2b] flex flex-col shrink-0 transition-all duration-200 overflow-hidden">
+    <div class="p-2">
+      <button id="newChatBtn" class="w-full flex items-center gap-3 border border-gray-600 rounded-md px-3 py-3 text-sm hover:bg-gray-700/40 transition-colors">
+        <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+          <path stroke-linecap="round" stroke-linejoin="round" d="M12 4v16m8-8H4" />
+        </svg>
+        New chat
+      </button>
+    </div>
+
+    <div id="historyList" class="flex-1 overflow-y-auto px-2 space-y-1 text-sm text-gray-300"></div>
+
+    <div class="border-t border-gray-700 p-2 space-y-1 text-sm">
+      <button id="themeToggle" class="w-full flex items-center gap-3 px-3 py-3 rounded-md hover:bg-gray-700/40 cursor-pointer transition-colors text-left">
+        <svg id="themeIconMoon" xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+          <path stroke-linecap="round" stroke-linejoin="round" d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z" />
+        </svg>
+        <svg id="themeIconSun" class="hidden w-4 h-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+          <path stroke-linecap="round" stroke-linejoin="round" d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364 6.364l-.707-.707M6.343 6.343l-.707-.707m12.728 0l-.707.707M6.343 17.657l-.707.707M16 12a4 4 0 11-8 0 4 4 0 018 0z" />
+        </svg>
+        <span id="themeLabel">Dark mode</span>
+      </button>
+      <div id="clearBtn" class="flex items-center gap-3 px-3 py-3 rounded-md hover:bg-gray-700/40 cursor-pointer transition-colors">
+        <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+          <path stroke-linecap="round" stroke-linejoin="round" d="M17.657 18.657A8 8 0 016.343 7.343S7 9 9 10c0-2 .5-5 2.986-7C14 5 16.09 5.777 17.656 7.343A7.975 7.975 0 0120 13a7.975 7.975 0 01-2.343 5.657z" />
+        </svg>
+        Clear conversations
+      </div>
+
+      <!-- Logged-in user + logout -->
+      <div class="flex items-center gap-3 px-3 py-3 rounded-md">
+        <div class="w-7 h-7 rounded-full bg-[#2c3e5c] flex items-center justify-center text-xs font-semibold shrink-0" id="userAvatar">?</div>
+        <span id="userNameLabel" class="truncate flex-1">User</span>
+        <button id="logoutBtn" title="Log out" class="text-gray-400 hover:text-gray-200 transition-colors">
+          <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
+          </svg>
+        </button>
+      </div>
+    </div>
+  </aside>
+
+  <!-- Main -->
+  <main class="flex-1 flex flex-col relative min-w-0">
+
+    <!-- Mobile top bar -->
+    <div class="md:hidden flex items-center justify-between px-3 py-2 border-b border-gray-700 bg-[#1e2436]">
+      <button id="sidebarToggle" class="p-2 hover:bg-gray-700/40 rounded-md">
+        <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+          <path stroke-linecap="round" stroke-linejoin="round" d="M4 6h16M4 12h16M4 18h16" />
+        </svg>
+      </button>
+      <span class="font-semibold">Edith</span>
+      <div class="w-9"></div>
+    </div>
+
+    <!-- Chat area -->
+    <div id="chatArea" class="chat-wallpaper flex-1 overflow-y-auto">
+
+      <!-- Welcome screen -->
+      <div id="welcomeScreen" class="h-full flex flex-col items-center justify-center px-4">
+        <h1 class="edith-title text-5xl mb-10">Edith</h1>
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-4 max-w-3xl w-full">
+
+          <div class="flex flex-col items-center gap-3">
+            <div class="w-8 h-8 flex items-center justify-center">☀️</div>
+            <span class="text-sm text-gray-400">Examples</span>
+            <button class="example-btn w-full bg-[#262c42] hover:bg-[#333a54] transition-colors rounded-lg px-4 py-3 text-sm text-gray-200" data-prompt="Explain quantum computing in simple terms">"Explain quantum computing in simple terms" →</button>
+            <button class="example-btn w-full bg-[#262c42] hover:bg-[#333a54] transition-colors rounded-lg px-4 py-3 text-sm text-gray-200" data-prompt="Got any creative ideas for a 10 year old's birthday?">"Got any creative ideas for a 10 year old's birthday?" →</button>
+            <button class="example-btn w-full bg-[#262c42] hover:bg-[#333a54] transition-colors rounded-lg px-4 py-3 text-sm text-gray-200" data-prompt="If a train leaves at 3pm going 60mph, and another leaves at 4pm going 90mph on the same track, when does the second train catch up?">"If a train leaves at 3pm going 60mph…" (logic puzzle) →</button>
+          </div>
+
+          <div class="flex flex-col items-center gap-3">
+            <div class="w-8 h-8 flex items-center justify-center">⚡</div>
+            <span class="text-sm text-gray-400">Capabilities</span>
+            <div class="w-full bg-[#262c42] hover:bg-[#333a54] transition-colors rounded-lg px-4 py-3 text-sm text-gray-200 text-center">Remembers what user said earlier in the conversation</div>
+            <div class="w-full bg-[#262c42] hover:bg-[#333a54] transition-colors rounded-lg px-4 py-3 text-sm text-gray-200 text-center">Solves logic, math, and reasoning questions</div>
+            <div class="w-full bg-[#262c42] hover:bg-[#333a54] transition-colors rounded-lg px-4 py-3 text-sm text-gray-200 text-center">Saves your past chats in this browser</div>
+          </div>
+
+          <div class="flex flex-col items-center gap-3">
+            <div class="w-8 h-8 flex items-center justify-center">⚠️</div>
+            <span class="text-sm text-gray-400">Limitations</span>
+            <div class="w-full bg-[#262c42] hover:bg-[#333a54] transition-colors rounded-lg px-4 py-3 text-sm text-gray-200 text-center">May occasionally generate incorrect information</div>
+            <div class="w-full bg-[#262c42] hover:bg-[#333a54] transition-colors rounded-lg px-4 py-3 text-sm text-gray-200 text-center">Runs through a Node.js backend (API key stays server-side)</div>
+            <div class="w-full bg-[#262c42] hover:bg-[#333a54] transition-colors rounded-lg px-4 py-3 text-sm text-gray-200 text-center">Chat history is saved only in this browser, not in the cloud</div>
+          </div>
+
+        </div>
+      </div>
+
+      <!-- Messages list (hidden until first message) -->
+      <div id="messagesList" class="hidden max-w-3xl mx-auto w-full pb-10"></div>
+    </div>
+
+    <!-- Input bar -->
+    <div class="border-t border-gray-700 bg-[#1e2436] px-4 pt-4 pb-6">
+      <div class="max-w-3xl mx-auto">
+        <div class="relative flex items-end bg-[#2a3149] rounded-xl shadow-md border border-gray-600 focus-within:border-gray-400 transition-colors">
+          <textarea
+            id="chatInput"
+            rows="1"
+            placeholder="Send a message..."
+            class="flex-1 bg-transparent resize-none outline-none px-4 py-3 text-sm max-h-40 placeholder-gray-400"
+          ></textarea>
+          <button id="sendBtn" class="m-2 p-1.5 rounded-md text-gray-300 hover:bg-gray-600/50 disabled:opacity-30 disabled:hover:bg-transparent transition-colors" disabled>
+            <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M12 19V5m0 0l-6 6m6-6l6 6" />
+            </svg>
+          </button>
+        </div>
+        <p class="text-center text-xs text-gray-500 mt-3">Running on your own backend at <code>/api/chat</code>. API key stays on the server.</p>
+      </div>
+    </div>
+
+  </main>
+</div>
+
+<script>
+(() => {
+  // ---------- Auth elements ----------
+  const authScreen = document.getElementById('authScreen');
+  const appRoot = document.getElementById('appRoot');
+  const authError = document.getElementById('authError');
+  const authSubtitle = document.getElementById('authSubtitle');
+  const loginForm = document.getElementById('loginForm');
+  const signupForm = document.getElementById('signupForm');
+  const authToggleBtn = document.getElementById('authToggleBtn');
+  const authToggleText = document.getElementById('authToggleText');
+  const userAvatar = document.getElementById('userAvatar');
+  const userNameLabel = document.getElementById('userNameLabel');
+  const logoutBtn = document.getElementById('logoutBtn');
+
+  // ---------- App elements ----------
+  const chatInput = document.getElementById('chatInput');
+  const sendBtn = document.getElementById('sendBtn');
+  const welcomeScreen = document.getElementById('welcomeScreen');
+  const messagesList = document.getElementById('messagesList');
+  const chatArea = document.getElementById('chatArea');
+  const newChatBtn = document.getElementById('newChatBtn');
+  const historyList = document.getElementById('historyList');
+  const sidebar = document.getElementById('sidebar');
+  const sidebarToggle = document.getElementById('sidebarToggle');
+  const clearBtn = document.getElementById('clearBtn');
+  const themeToggle = document.getElementById('themeToggle');
+  const themeIconMoon = document.getElementById('themeIconMoon');
+  const themeIconSun = document.getElementById('themeIconSun');
+  const themeLabel = document.getElementById('themeLabel');
+
+  const AVATAR_HTML = {
+    user: '<div class="w-8 h-8 rounded-sm bg-[#2c3e5c] flex items-center justify-center text-xs font-semibold shrink-0">U</div>',
+    assistant: '<div class="w-8 h-8 rounded-sm bg-[#d4a24e] flex items-center justify-center text-xs font-semibold shrink-0">AI</div>'
+  };
+
+  const THEME_KEY = 'chatgpt_clone_theme';
+  let conversation = [];
+  let currentChatId = null;
+  let currentUserEmail = null;
+
+  // ---------- Auth: form toggle ----------
+  let showingLogin = true;
+  authToggleBtn.addEventListener('click', () => {
+    showingLogin = !showingLogin;
+    loginForm.classList.toggle('hidden', !showingLogin);
+    signupForm.classList.toggle('hidden', showingLogin);
+    authSubtitle.textContent = showingLogin ? 'Log in to continue' : 'Create your account';
+    authToggleText.textContent = showingLogin ? "Don't have an account?" : 'Already have an account?';
+    authToggleBtn.textContent = showingLogin ? 'Sign up' : 'Log in';
+    authError.classList.add('hidden');
+  });
+
+  function showAuthError(msg) {
+    authError.textContent = msg;
+    authError.classList.remove('hidden');
+  }
+
+  loginForm.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    authError.classList.add('hidden');
+    const email = document.getElementById('loginEmail').value.trim();
+    const password = document.getElementById('loginPassword').value;
+
+    try {
+      const res = await fetch('/auth/login', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'same-origin',
+        body: JSON.stringify({ email, password })
+      });
+      const data = await res.json();
+      if (!res.ok) return showAuthError(data.error || 'Login failed.');
+      onLoggedIn(data.user);
+    } catch (err) {
+      showAuthError('Network error: ' + err.message);
+    }
+  });
+
+  signupForm.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    authError.classList.add('hidden');
+    const name = document.getElementById('signupName').value.trim();
+    const email = document.getElementById('signupEmail').value.trim();
+    const password = document.getElementById('signupPassword').value;
+
+    try {
+      const res = await fetch('/auth/signup', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'same-origin',
+        body: JSON.stringify({ name, email, password })
+      });
+      const data = await res.json();
+      if (!res.ok) return showAuthError(data.error || 'Sign up failed.');
+      onLoggedIn(data.user);
+    } catch (err) {
+      showAuthError('Network error: ' + err.message);
+    }
+  });
+
+  logoutBtn.addEventListener('click', async () => {
+    await fetch('/auth/logout', { credentials: 'same-origin' });
+    location.reload();
+  });
+
+  function onLoggedIn(user) {
+    currentUserEmail = user.email;
+    userNameLabel.textContent = user.name;
+    userAvatar.textContent = user.name.charAt(0).toUpperCase();
+    authScreen.classList.add('hidden');
+    appRoot.classList.remove('hidden');
+    appRoot.classList.add('flex');
+    loadTheme();
+    renderHistoryList();
+  }
+
+  async function checkExistingSession() {
+    try {
+      const res = await fetch('/auth/me', { credentials: 'same-origin' });
+      const data = await res.json();
+      if (data.user) onLoggedIn(data.user);
+    } catch (_) {
+      // not logged in, stay on auth screen
+    }
+  }
+
+  // ---------- Theme (dark/light mode) ----------
+  function applyTheme(theme) {
+    document.body.classList.toggle('light-mode', theme === 'light');
+    themeIconMoon.classList.toggle('hidden', theme === 'light');
+    themeIconSun.classList.toggle('hidden', theme !== 'light');
+    themeLabel.textContent = theme === 'light' ? 'Light mode' : 'Dark mode';
+  }
+
+  function loadTheme() {
+    const saved = localStorage.getItem(THEME_KEY) || 'dark';
+    applyTheme(saved);
+  }
+
+  themeToggle.addEventListener('click', () => {
+    const isLight = document.body.classList.contains('light-mode');
+    const next = isLight ? 'dark' : 'light';
+    applyTheme(next);
+    localStorage.setItem(THEME_KEY, next);
+  });
+
+  // ---------- Persistent chat history (per logged-in user, in localStorage) ----------
+  function chatsKey() {
+    return 'chatgpt_clone_chats_' + (currentUserEmail || 'anon');
+  }
+
+  function getAllChats() {
+    try {
+      return JSON.parse(localStorage.getItem(chatsKey())) || [];
+    } catch (_) {
+      return [];
+    }
+  }
+
+  function saveAllChats(chats) {
+    localStorage.setItem(chatsKey(), JSON.stringify(chats));
+  }
+
+  function saveCurrentChat() {
+    if (!currentChatId || conversation.length === 0) return;
+    const chats = getAllChats();
+    const idx = chats.findIndex((c) => c.id === currentChatId);
+    const title = conversation[0].text.length > 28
+      ? conversation[0].text.slice(0, 28) + '…'
+      : conversation[0].text;
+    const chatData = { id: currentChatId, title, messages: conversation };
+
+    if (idx >= 0) chats[idx] = chatData;
+    else chats.unshift(chatData);
+
+    saveAllChats(chats);
+  }
+
+  function renderHistoryList() {
+    const chats = getAllChats();
+    historyList.innerHTML = '';
+    chats.forEach((chat) => {
+      const item = document.createElement('div');
+      item.className = 'group px-3 py-3 rounded-md hover:bg-gray-700/40 cursor-pointer transition-colors flex items-center gap-3';
+      item.innerHTML = `
+        <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+          <path stroke-linecap="round" stroke-linejoin="round" d="M8 10h.01M12 10h.01M16 10h.01M9 16H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-4l-4 4v-4z" />
+        </svg>
+        <span class="chat-title truncate flex-1">${escapeHtml(chat.title)}</span>
+        <div class="hidden group-hover:flex items-center gap-1 shrink-0">
+          <button class="rename-btn p-1 hover:text-gray-100 text-gray-400" title="Rename">
+            <svg xmlns="http://www.w3.org/2000/svg" class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+            </svg>
+          </button>
+          <button class="delete-btn p-1 hover:text-red-400 text-gray-400" title="Delete">
+            <svg xmlns="http://www.w3.org/2000/svg" class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+            </svg>
+          </button>
+        </div>
+      `;
+
+      item.querySelector('.chat-title').addEventListener('click', () => loadChat(chat.id));
+
+      item.querySelector('.rename-btn').addEventListener('click', (e) => {
+        e.stopPropagation();
+        renameChat(chat.id, item);
+      });
+
+      item.querySelector('.delete-btn').addEventListener('click', (e) => {
+        e.stopPropagation();
+        deleteChat(chat.id);
+      });
+
+      historyList.appendChild(item);
+    });
+  }
+
+  function renameChat(id, itemEl) {
+    const chats = getAllChats();
+    const chat = chats.find((c) => c.id === id);
+    if (!chat) return;
+
+    const titleSpan = itemEl.querySelector('.chat-title');
+    const input = document.createElement('input');
+    input.type = 'text';
+    input.value = chat.title;
+    input.className = 'flex-1 bg-[#232a40] border border-gray-500 rounded px-1 py-0.5 text-sm outline-none';
+    titleSpan.replaceWith(input);
+    input.focus();
+    input.select();
+
+    function commit() {
+      const newTitle = input.value.trim() || chat.title;
+      const allChats = getAllChats();
+      const target = allChats.find((c) => c.id === id);
+      if (target) target.title = newTitle;
+      saveAllChats(allChats);
+      renderHistoryList();
+    }
+
+    input.addEventListener('blur', commit);
+    input.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter') input.blur();
+      if (e.key === 'Escape') { input.value = chat.title; input.blur(); }
+    });
+  }
+
+  function deleteChat(id) {
+    if (!confirm('Delete this conversation? This cannot be undone.')) return;
+    const chats = getAllChats().filter((c) => c.id !== id);
+    saveAllChats(chats);
+    if (currentChatId === id) resetChat();
+    renderHistoryList();
+  }
+
+  function loadChat(id) {
+    const chats = getAllChats();
+    const chat = chats.find((c) => c.id === id);
+    if (!chat) return;
+
+    currentChatId = chat.id;
+    conversation = chat.messages;
+
+    messagesList.innerHTML = '';
+    welcomeScreen.classList.add('hidden');
+    messagesList.classList.remove('hidden');
+
+    conversation.forEach((m) => appendMessage(m.role, m.text, true));
+  }
+
+  // ---------- Call our own backend ----------
+  async function callBackend(messages) {
+    const res = await fetch('/api/chat', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      credentials: 'same-origin',
+      body: JSON.stringify({ messages })
+    });
+
+    if (!res.ok) {
+      let detail = '';
+      try { detail = (await res.json()).error || ''; } catch (_) {}
+      throw new Error(detail || `Request failed (${res.status})`);
+    }
+
+    const data = await res.json();
+    return data.reply;
+  }
+
+  // ---------- UI helpers ----------
+  function autoResizeInput() {
+    chatInput.style.height = 'auto';
+    chatInput.style.height = Math.min(chatInput.scrollHeight, 160) + 'px';
+    sendBtn.disabled = chatInput.value.trim().length === 0;
+  }
+
+  function scrollToBottom() {
+    chatArea.scrollTop = chatArea.scrollHeight;
+  }
+
+  function showChatView() {
+    if (!welcomeScreen.classList.contains('hidden')) {
+      welcomeScreen.classList.add('hidden');
+      messagesList.classList.remove('hidden');
+    }
+  }
+
+  function escapeHtml(str) {
+    const div = document.createElement('div');
+    div.textContent = str;
+    return div.innerHTML;
+  }
+
+  function appendMessage(role, text, escape = false) {
+    const row = document.createElement('div');
+    row.className = `group msg-enter flex gap-4 px-4 py-6 ${role === 'assistant' ? 'bg-[#262c42]' : ''}`;
+
+    const copyButtonHtml = role === 'assistant' ? `
+      <button class="copy-btn shrink-0 self-start mt-1 opacity-0 group-hover:opacity-100 transition-opacity text-gray-400 hover:text-gray-100 p-1" title="Copy">
+        <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4 copy-icon" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+          <path stroke-linecap="round" stroke-linejoin="round" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" />
+        </svg>
+        <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4 check-icon hidden text-green-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+          <path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7" />
+        </svg>
+      </button>
+    ` : '';
+
+    row.innerHTML = `
+      ${AVATAR_HTML[role]}
+      <div class="flex-1 text-sm leading-relaxed whitespace-pre-wrap pt-1 msg-text">${escape ? escapeHtml(text) : text}</div>
+      ${copyButtonHtml}
+    `;
+
+    if (role === 'assistant') {
+      const copyBtn = row.querySelector('.copy-btn');
+      copyBtn.addEventListener('click', async () => {
+        const msgText = row.querySelector('.msg-text').textContent;
+        try {
+          await navigator.clipboard.writeText(msgText);
+        } catch (_) {
+          // Fallback for browsers/contexts where clipboard API is blocked
+          const ta = document.createElement('textarea');
+          ta.value = msgText;
+          document.body.appendChild(ta);
+          ta.select();
+          document.execCommand('copy');
+          document.body.removeChild(ta);
+        }
+        const copyIcon = copyBtn.querySelector('.copy-icon');
+        const checkIcon = copyBtn.querySelector('.check-icon');
+        copyIcon.classList.add('hidden');
+        checkIcon.classList.remove('hidden');
+        setTimeout(() => {
+          copyIcon.classList.remove('hidden');
+          checkIcon.classList.add('hidden');
+        }, 1500);
+      });
+    }
+
+    messagesList.appendChild(row);
+    scrollToBottom();
+    return row;
+  }
+
+  function showTyping() {
+    const row = document.createElement('div');
+    row.className = 'msg-enter flex gap-4 px-4 py-6 bg-[#262c42]';
+    row.id = 'typingRow';
+    row.innerHTML = `
+      ${AVATAR_HTML.assistant}
+      <div class="flex items-center gap-1 pt-2">
+        <span class="typing-dot w-2 h-2 bg-gray-400 rounded-full inline-block"></span>
+        <span class="typing-dot w-2 h-2 bg-gray-400 rounded-full inline-block"></span>
+        <span class="typing-dot w-2 h-2 bg-gray-400 rounded-full inline-block"></span>
+      </div>
+    `;
+    messagesList.appendChild(row);
+    scrollToBottom();
+  }
+
+  function removeTyping() {
+    document.getElementById('typingRow')?.remove();
+  }
+
+  // ---------- Core send flow ----------
+  async function sendMessage(promptOverride) {
+    const text = (promptOverride ?? chatInput.value).trim();
+    if (!text) return;
+
+    showChatView();
+
+    if (!currentChatId) {
+      currentChatId = 'chat_' + Date.now();
+    }
+
+    appendMessage('user', text, true);
+    conversation.push({ role: 'user', text });
+    saveCurrentChat();
+    renderHistoryList();
+
+    chatInput.value = '';
+    autoResizeInput();
+
+    showTyping();
+
+    try {
+      const apiMessages = conversation.map(m => ({ role: m.role, content: m.text }));
+      const reply = await callBackend(apiMessages);
+      removeTyping();
+      appendMessage('assistant', reply, true);
+      conversation.push({ role: 'assistant', text: reply });
+      saveCurrentChat();
+    } catch (err) {
+      removeTyping();
+      appendMessage('assistant', `Backend error: ${err.message}`, true);
+    }
+  }
+
+  function resetChat() {
+    messagesList.innerHTML = '';
+    messagesList.classList.add('hidden');
+    welcomeScreen.classList.remove('hidden');
+    conversation = [];
+    currentChatId = null;
+    chatInput.value = '';
+    autoResizeInput();
+  }
+
+  welcomeScreen.addEventListener('click', (e) => {
+    const btn = e.target.closest('.example-btn');
+    if (btn) sendMessage(btn.dataset.prompt);
+  });
+
+  chatInput.addEventListener('input', autoResizeInput);
+
+  chatInput.addEventListener('keydown', (e) => {
+    if (e.key === 'Enter' && !e.shiftKey) {
+      e.preventDefault();
+      sendMessage();
+    }
+  });
+
+  sendBtn.addEventListener('click', () => sendMessage());
+  newChatBtn.addEventListener('click', resetChat);
+  clearBtn.addEventListener('click', () => {
+    if (!confirm('Delete all saved conversations from this browser? This cannot be undone.')) return;
+    localStorage.removeItem(chatsKey());
+    historyList.innerHTML = '';
+    resetChat();
+  });
+
+  sidebarToggle?.addEventListener('click', () => {
+    sidebar.classList.toggle('w-0');
+    sidebar.classList.toggle('w-[260px]');
+  });
+
+  // ---------- Password show/hide toggle ----------
+  document.querySelectorAll('.password-toggle').forEach((btn) => {
+    btn.addEventListener('click', () => {
+      const targetInput = document.getElementById(btn.dataset.target);
+      const isShowing = targetInput.type === 'text';
+      targetInput.type = isShowing ? 'password' : 'text';
+      btn.classList.toggle('showing', !isShowing);
+    });
+  });
+
+  // ---------- Init ----------
+  checkExistingSession();
+})();
+</script>
+
+</body>
+</html>
